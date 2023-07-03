@@ -4,8 +4,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+// const encrypt = require("mongoose-encryption");
 const port = 3000;
+const md5 = require("md5");
 
 const app = express();
 
@@ -25,12 +26,12 @@ const userSchema = new mongoose.Schema({
   password: String,
 });
 
-userSchema.plugin(encrypt, {
-  secret: process.env.SECRET,
-  encryptedFields: ["password"],
-}); // Add the encrypt package as a plugin
-// Add the plugin to the schema before I create the mongoose model based on the same schema.
-// Instead of encrypting the entire DB, encrypt only certai fields (that matches the name of at least one of the userSchema keys name)
+// userSchema.plugin(encrypt, {
+//   secret: process.env.SECRET,
+//   encryptedFields: ["password"],
+// }); // Add the encrypt package as a plugin
+// // Add the plugin to the schema before I create the mongoose model based on the same schema.
+// // Instead of encrypting the entire DB, encrypt only certai fields (that matches the name of at least one of the userSchema keys name)
 
 const User = new mongoose.model("User", userSchema);
 
@@ -50,7 +51,7 @@ app.post("/register", async function (req, res) {
   try {
     const newUser = new User({
       email: req.body.username,
-      password: req.body.password,
+      password: md5(req.body.password),
     });
     await newUser.save();
     res.render("secrets"); // Only rendering the secrets page from the register and login routes
@@ -62,7 +63,7 @@ app.post("/register", async function (req, res) {
 app.post("/login", function (req, res) {
   try {
     const username = req.body.username;
-    const password = req.body.password;
+    const password = md5(req.body.password);
 
     User.findOne({ email: username }).then(function (foundUser) {
       if (foundUser) {
